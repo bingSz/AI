@@ -26,17 +26,6 @@ void printVector(double *theta, const int x)
 	}
 }
 
-void printVectorInt(int *theta, const int x)
-{
-	int xCount;
-
-	for (xCount = 0; xCount < x; xCount++)
-	{
-		printf("%d", theta[xCount]);
-		printf("\n");
-	}
-}
-
 double testFunc(double *theta, int *data, const int x)
 {
 	return vectorTimes(data, theta, x);
@@ -47,7 +36,7 @@ int main()
 	int data[4] = {-1, 1, -1, -1};
 	const int dataItemSize = sizeof(data) / sizeof(int);
 	double theta[dataItemSize];
-	double learningRate = 0.01;
+	double learningRate = (double) 1 / dataItemSize;
 	double errorSum;
 	int count;
 	int xCount;
@@ -56,28 +45,15 @@ int main()
 
 	for (count = 0; count < 1000; count++)
 	{
+		errorSum = 1 - vectorTimes(data, theta, dataItemSize);
+		
 		for (xCount = 0; xCount < dataItemSize; xCount++)
 		{
-			errorSum = 1 - vectorTimes(data, theta, dataItemSize);
 			theta[xCount] += learningRate * errorSum * data[xCount];
 		}
 	}
 
 	printVector(theta, dataItemSize);
-
-	int testData[4] = {0, 1, 1, 0};
-	double ret;
-
-	if ((ret = testFunc(theta, testData, dataItemSize)) >= 0)
-	{
-		printf("It belongs in.\n");
-	}
-	else
-	{
-		printf("It do not belongs in.\n");
-	}
-	
-	printf("The result: %lf\n", ret);
 
 	return 0;
 }
