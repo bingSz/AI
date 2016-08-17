@@ -62,11 +62,12 @@ int main()
 
 	for (count = 0; count < 100; count++)
 	{
+		errorSum = 1 - vectorTimes(data, theta, dataItemSize);
+
 		for (xCount = 0; xCount < dataItemSize; xCount++)
 		{
 			for (yCount = 0; yCount < 2; yCount++)
 			{
-				errorSum = 1 - vectorTimes(data, theta, dataItemSize);
 				theta[xCount][yCount] += learningRate * errorSum * data[xCount][yCount];
 			}
 		}
