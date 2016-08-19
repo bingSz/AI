@@ -1,93 +1,53 @@
 #include <stdio.h>
-#include <string.h>
 #include <math.h>
+#include <string.h>
 
-double vectorTimes(double data[][2], double theta[][2], const int x)
+double vectorTimes(double *a, double *b, int size)
 {
-	double ret = 0;
-	int xCount;
-	int yCount;
+	double ret;
+	int count;
 
-	for (xCount = 0; xCount < x; xCount++)
+	ret = 0;
+	for (count = 0; count < size; count++)
 	{
-		for (yCount = 0; yCount < 2; yCount++)
-		{
-			ret += data[xCount][yCount] * theta[xCount][yCount];
-		}
+		ret += a[count] * b[count];
 	}
 
 	return ret;
 }
 
-void printVector(double (*theta)[2], const int x, const int y)
-{
-	int xCount;
-	int yCount;
-
-	for (xCount = 0; xCount < x; xCount++)
-	{
-		for (yCount = 0; yCount < y; yCount++)
-		{
-			printf("%lf ", theta[xCount][yCount]);
-		}
-		printf("\n");
-	}
-}
-
-double testFunc(double (*theta)[2], double (*data)[2], const int x)
-{
-	return vectorTimes(theta, data, x);
-}
-
-double computeProbability(double value)
-{
-	return 1 / (1 + exp(-value));
-}
-
 int main()
 {
-	double data[4][2] = {{2, 1}, 
-			     {1, 4}, 
-			     {5, 1}, 
-			     {3, 3}};
-	const int dataItemSize = sizeof(data) / sizeof(data[0]);
-	double theta[dataItemSize][2];
-	double learningRate = 0.01;
+	double data[6][2] = {{1, 2}, 
+			     {1, 1}, 
+			     {2, 1}, 
+			     {2, 2}, 
+			     {2, 3}, 
+			     {1.3, 0}};
+	int ret[6] = {0, 0, 1, 1, 1, 0};
+
+	double theta[2];
 	double errorSum;
+	double learningRate = 0.1;
+	double bias;
 	int count;
-	int xCount;
-	int yCount;
+	int subCount;
+	int training;
 
 	memset(theta, 0, sizeof(theta));
-
-	for (count = 0; count < 100; count++)
+	bias = 0;
+	for (count = 0; count < 10000; count++)
 	{
-		errorSum = 1 - vectorTimes(data, theta, dataItemSize);
+		training = count % 5;
 
-		for (xCount = 0; xCount < dataItemSize; xCount++)
-		{
-			for (yCount = 0; yCount < 2; yCount++)
-			{
-				theta[xCount][yCount] += learningRate * errorSum * data[xCount][yCount];
-			}
-		}
+		errorSum = ret[training] - 1/(1 + exp(-vectorTimes(theta, data[training], 2) - bias));
+		
+		theta[0] += learningRate * errorSum * data[training][0] / 4;
+		theta[1] += learningRate * errorSum * data[training][1] / 4;
+		bias += errorSum;
 	}
 
-	printf("-----The result-----\n");
-	printVector(theta, dataItemSize, 2);
-	printf("-----End------------\n");
-
-	printf("-----The test data--\n");
-	double testData[4][2] = {{1, 2}, 
-				 {3, 1},
-				 {0, 5}, 
-				 {1, 0}};
-	printVector(testData, 4, 2);
-	printf("-----End------------\n");
-	
-	printf("-----The test result\n");
-	printf("The probability is: %lf\n", computeProbability(testFunc(theta, testData, dataItemSize)));
-	printf("-----End------------\n");
+	printf("%lf\n%lf\n%f\n", theta[0], theta[1], bias);
 
 	return 0;
 }
