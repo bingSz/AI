@@ -76,7 +76,7 @@ int predict(decisionTree *tree, int *data)
 
 int main()
 {
-  int data[5][3] = {{0, 1, 1}, 
+  int data[4][3] = {{0, 1, 1}, 
 		    {0, 0, 0}, 
 		    {1, 1, 1}, 
 		    {1, 0, 1}};
