@@ -43,7 +43,7 @@ int main(int argc, char * argv[])
 			fprintf(stderr, "Usage: %s l [picture path] [correct result].\n", argv[0]);
 			exit(EXIT_FAILURE);
 		}
-		if (-1 == learn(argv[2], argv[3], 0x00, 100, 100))
+		if (-1 == learn(argv[2], argv[3], 0x00, 200, 200))
 		{
 			fprintf(stderr, "Learning failure.\n");
 			exit(EXIT_FAILURE);
@@ -56,7 +56,7 @@ int main(int argc, char * argv[])
 			fprintf(stderr, "Usage: %s i [picture path].\n", argv[0]);
 			exit(EXIT_FAILURE);
 		}
-		if (NULL == (ret = identify(argv[2], 0x00, 100, 100)))
+		if (NULL == (ret = identify(argv[2], 0x00, 200, 200)))
 		{
 			exit(EXIT_FAILURE);
 		}
@@ -215,23 +215,27 @@ int learn(const char *path, const char *correctRet, int key, const int x, const 
 		pteXY[i] = addrCount;
 		i += 1;
 	}
+	pteXY[i] = -1;
 
-	pteDeltaX = -((pteXY[0] % (3 * x) + 1) / 3);
-	pteDeltaY = y - (y - (pteXY[0] / (3 * x)));
+	pteDeltaY = -(pteXY[0] % (3 * x) + 1);
+	pteDeltaX = -(pteXY[0] / (3 * x) + 1);
 
-	for (i = 0; pteXY[i] != 0; i++)
+	for (i = 0; pteXY[i] != -1; i++)
 	{
-		pteX = pteXY[i] % (3 * x);
-		pteY = pteXY[i] / (3 * x);
-		if (pteY == pteXY[i + 1] / (3 * x) && pteY == pteXY[i + 2] / (3 * x))
+		pteX = pteXY[i] / (3 * x) + 1;
+		pteY = pteXY[i] % (3 * x) + 1;
+/*		if (pteY == pteXY[i + 1] / (3 * x) && pteY == pteXY[i + 2] / (3 * x))
 		{
 			i += 2;
 		}
 		pteX += 1;
 		pteX = pteX / 3 + 1;
 		pteY = y - pteY;
-		
-		if (0 >= fprintf(outH, "%d %d\n", pteX + pteDeltaX, pteY + pteDeltaY))
+*/
+		pteX += pteDeltaX;
+		pteY += pteDeltaY;
+
+		if (0 >= fprintf(outH, "%d %d\n", pteX, pteY))
 		{
 			return -1;
 		}
@@ -298,23 +302,23 @@ char *identify(const char *path, int key, int x, int y)
 		pteXY[pteAddrCount] = addrCount;
 		pteAddrCount += 1;
 	}
+	pteXY[pteAddrCount] = -1;
 
+	pteDeltaY = -(pteXY[0] % (3 * x) + 1);
+	pteDeltaX = -(pteXY[0] / (3 * x) + 1);
 
-	pteDeltaX = -((pteXY[0] % (3 * x) + 1) / 3);
-	pteDeltaY = y - (y - (pteXY[0] / (3 * y)));
-
-	for (i = 0; pteXY[i] != 0; i++)
+	for (i = 0; pteXY[i] != -1; i++)
 	{
-		pteX = pteXY[i] % (3 * x);
-		pteY = pteXY[i] / (3 * y);
-		if (pteY == pteXY[i + 1] / (3 * y) && pteY == pteXY[i + 2] / (3 * y))
+		pteX = pteXY[i] / (3 * x) + 1;
+		pteY = pteXY[i] % (3 * x) + 1;
+/*		if (pteY == pteXY[i + 1] / (3 * x) && pteY == pteXY[i + 2] / (3 * x))
 		{
 			i += 2;
 		}
 		pteX += 1;
 		pteX = pteX / 3 + 1;
 		pteY = y - pteY;
-	
+*/
 		pteX += pteDeltaX;
 		pteY += pteDeltaY;
 
@@ -457,8 +461,7 @@ float compareData(PTE *pteInInfo, int pteInInfoSize)
 
 		fclose(dataH);
 
-		if (probability < (tempProbability = computeProbability(pteDataInfo, pteInInfo, 
-			(pteInInfoSize > pteDataInfoCount)?pteInInfoSize:pteDataInfoCount, pteInInfoSize)))
+		if (probability < (tempProbability = computeProbability(pteDataInfo, pteInInfo, pteDataInfoCount, pteInInfoSize)))
 		{
 			probability = tempProbability;
 		}
@@ -470,9 +473,10 @@ float compareData(PTE *pteInInfo, int pteInInfoSize)
 	return probability;
 }
 
-float computeProbability(PTE *pteDataInfo, PTE *pteInInfo, int size, int allProbability)
+float computeProbability(PTE *pteDataInfo, PTE *pteInInfo, int dataSize, int allProbability)
 {
 	int i;
+	int size = (size > allProbability)?size:allProbability;
 	int IhighestX = 0, IhighestY = 0;
 	int DhighestX = 0, DhighestY = 0;
 	float total = 0;
@@ -512,8 +516,8 @@ float computeProbability(PTE *pteDataInfo, PTE *pteInInfo, int size, int allProb
 			total += 1;
 		}
 */	
-		total += -((pteDataInfo[i].x - pteInInfo[i].x) * (pteDataInfo[i].x - pteInInfo[i].x) + (pteDataInfo[i].y - pteInInfo[i].y) * (pteDataInfo[i].y - pteInInfo[i].y));
+		total += exp(-((pteDataInfo[i].x - pteInInfo[i].x) * (pteDataInfo[i].x - pteInInfo[i].x) + (pteDataInfo[i].y - pteInInfo[i].y) * (pteDataInfo[i].y - pteInInfo[i].y)));
 	}
 
-	return total / allProbability - abs(IhighestX - DhighestX) - abs(IhighestY - DhighestY) - fabs(size - allProbability);
+	return total - abs(IhighestX - DhighestX) - abs(IhighestY - DhighestY) - fabs(dataSize - allProbability);
 }
