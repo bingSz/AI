@@ -254,8 +254,11 @@ char *identify(const char *path, int key, int x, int y)
 char *compare(PTE *pteInInfo, int pteInInfoSize)
 {
 	float highest = -1000.000, tempHighest = -1000.000;
+	float secHighest = -1000, thiHighest = -1000;
 	char *highestName = NULL;
 	static char tempHighestName[257] = "";
+	static char tempSecHighestName[257] = "";
+	static char tempThiHighestName[257] = "";
 
 	struct dirent *dirInfo;
 	DIR *dp;
@@ -285,6 +288,17 @@ char *compare(PTE *pteInInfo, int pteInInfoSize)
 				highest = tempHighest;
 				memcpy(tempHighestName, dirInfo->d_name, sizeof(tempHighestName));
 			}
+			if (highest > tempHighest && tempHighest > secHighest)
+			{
+				secHighest = tempHighest;
+				memcpy(tempSecHighestName, dirInfo->d_name, sizeof(tempSecHighestName));
+			}
+			if (secHighest > tempHighest && tempHighest > thiHighest)
+			{
+				thiHighest = tempHighest;
+				memcpy(tempThiHighestName, dirInfo->d_name, sizeof(tempThiHighestName));
+			}
+
 			if (-1 == chdir("../"))
 			{
 				return NULL;
@@ -294,7 +308,19 @@ char *compare(PTE *pteInInfo, int pteInInfoSize)
 
 	closedir(dp);
 
-	highestName = tempHighestName;
+	if (0 == strcmp(tempHighestName, tempSecHighestName) || 0 == strcmp(tempHighestName, tempThiHighestName))
+	{
+		highestName = tempHighestName;
+	}
+	else if (0 == strcmp(tempSecHighestName, tempThiHighestName) && strlen(tempSecHighestName) != 0)
+	{
+		highestName = tempSecHighestName;
+	}
+	else
+	{
+		highestName = tempHighestName;
+	}
+
 	return highestName;
 }
 
