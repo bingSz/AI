@@ -99,10 +99,10 @@ PteInfo getbmpinfo(const char *path)
 	fread(tempData, 4, 1, fr);
 
 	subCount = 0;
-	for (count = strlen(tempData) - 1; count >= 0; count --)
+	for (count = strlen((const char *)tempData) - 1; count >= 0; count --)
 	{
 		snprintf(tempChar, sizeof(tempChar), "%x", (int)tempData[count]);
-		strncat(sizeData, tempChar, sizeof(sizeData) - strlen(sizeData));
+		strncat(sizeData, tempChar, sizeof(sizeData) - strlen(sizeData) - 1);
 		subCount += 1;
 	}
 
@@ -116,10 +116,10 @@ PteInfo getbmpinfo(const char *path)
 	memset(sizeData, 0, sizeof(sizeData));
 
 	subCount = 0;
-	for (count = strlen(tempData) - 1; count >= 0; count --)
+	for (count = strlen((const char *)tempData) - 1; count >= 0; count --)
 	{
 		snprintf(tempChar, sizeof(tempChar), "%x", (int)tempData[count]);
-		strncat(sizeData, tempChar, sizeof(sizeData) - strlen(sizeData));
+		strncat(sizeData, tempChar, sizeof(sizeData) - strlen(sizeData) - 1);
 		subCount += 1;
 	}
 
@@ -138,7 +138,7 @@ int learn(const char *path, const char *correctRet, int key, const int x, const 
 	int pteX, pteY;
 	int pteDeltaX, pteDeltaY;
 	int i;
-	const pteXYSize = 3 * x * y;
+	const int pteXYSize = 3 * x * y;
 	int *pteXY;
 	int addrCount = 0;
 
@@ -519,5 +519,5 @@ float computeProbability(PTE *pteDataInfo, PTE *pteInInfo, int dataSize, int all
 		total += exp(-((pteDataInfo[i].x - pteInInfo[i].x) * (pteDataInfo[i].x - pteInInfo[i].x) + (pteDataInfo[i].y - pteInInfo[i].y) * (pteDataInfo[i].y - pteInInfo[i].y)));
 	}
 
-	return total - abs(IhighestX - DhighestX) - abs(IhighestY - DhighestY) - fabs(dataSize - allProbability);
+	return total - abs(IhighestX - DhighestX) - abs(IhighestY - DhighestY) - abs(dataSize - allProbability);
 }
