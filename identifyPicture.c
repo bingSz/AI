@@ -10,11 +10,17 @@
 
 typedef struct
 {
+	long int dataSize;
+	long int headerSize;
+}PteInfo;
+
+typedef struct
+{
 	int x;
 	int y;
 }PTE;
 
-int learn(const char *path, const char *correctRet, const int x, const int y);
+int learn(const char *path, const char *correctRet, int key, const int x, const int y);
 char *identify(const char *path, int key, int x, int y);
 char *compare(PTE *pteInInfo, int pteInInfoSize);
 float compareData(PTE *pteInInfo, int pteInInfoSize);
@@ -37,7 +43,7 @@ int main(int argc, char * argv[])
 			fprintf(stderr, "Usage: %s l [picture path] [correct result].\n", argv[0]);
 			exit(EXIT_FAILURE);
 		}
-		if (-1 == learn(argv[2], argv[3], 100, 100))
+		if (-1 == learn(argv[2], argv[3], 0x00, 100, 100))
 		{
 			fprintf(stderr, "Learning failure.\n");
 			exit(EXIT_FAILURE);
@@ -66,13 +72,74 @@ int main(int argc, char * argv[])
 	return 0;
 }
 
-int learn(const char *path, const char *correctRet, const int x, const int y)
+PteInfo getbmpinfo(const char *path)
+{
+	PteInfo pteinfo;
+	long int allSize;
+	long int dataSize;
+	long int headerSize;
+
+	unsigned char tempData[9] = "";
+	char tempChar[5] = "";
+	char sizeData[10] = "";
+	int count;
+	int subCount;
+	FILE *fr = fopen(path, "r");
+
+	if (fr == NULL)
+	{
+		pteinfo.headerSize = 0;
+		pteinfo.dataSize = 0;
+		return pteinfo; 
+	}
+
+	/* Read the size of file */
+	fseek(fr, 2, SEEK_SET);
+
+	fread(tempData, 4, 1, fr);
+
+	subCount = 0;
+	for (count = strlen(tempData) - 1; count >= 0; count --)
+	{
+		snprintf(tempChar, sizeof(tempChar), "%x", (int)tempData[count]);
+		strncat(sizeData, tempChar, sizeof(sizeData) - strlen(sizeData));
+		subCount += 1;
+	}
+
+	allSize = strtol(sizeData, NULL, 16);
+
+	/* Read the size of header */
+	fseek(fr, 10, SEEK_SET);
+
+	fread(tempData, 4, 1, fr);
+
+	memset(sizeData, 0, sizeof(sizeData));
+
+	subCount = 0;
+	for (count = strlen(tempData) - 1; count >= 0; count --)
+	{
+		snprintf(tempChar, sizeof(tempChar), "%x", (int)tempData[count]);
+		strncat(sizeData, tempChar, sizeof(sizeData) - strlen(sizeData));
+		subCount += 1;
+	}
+
+	headerSize = strtol(sizeData, NULL, 16);
+
+	pteinfo.headerSize = headerSize;
+	pteinfo.dataSize = allSize - headerSize;
+
+	fclose(fr);
+
+	return pteinfo;
+}
+
+int learn(const char *path, const char *correctRet, int key, const int x, const int y)
 {
 	int pteX, pteY;
 	int pteDeltaX, pteDeltaY;
 	int i;
 	const pteXYSize = 3 * x * y;
-	int pteXY[pteXYSize];
+	int *pteXY;
 	int addrCount = 0;
 
 	int readChar;
@@ -81,6 +148,11 @@ int learn(const char *path, const char *correctRet, const int x, const int y)
 	char outFolder[1000] = "";
 	FILE *inH = NULL;
 	FILE *outH = NULL;
+
+	PteInfo pteinfo;
+	pteinfo = getbmpinfo(path);
+
+	pteXY = (int *)malloc(sizeof(int) * pteXYSize);
 
 	if (0 != access("data", F_OK))
 	{
@@ -114,7 +186,7 @@ int learn(const char *path, const char *correctRet, const int x, const int y)
 	{
 		return -1;
 	}
-	fseek(inH, 54, SEEK_SET);		/* skip file header */
+	fseek(inH, pteinfo.headerSize, SEEK_SET);		/* skip file header */
 
 	if (-1 == chdir("data"))
 	{
@@ -135,7 +207,7 @@ int learn(const char *path, const char *correctRet, const int x, const int y)
 	while ((readChar = fgetc(inH)) != EOF)
 	{
 		addrCount += 1;
-		if (readChar != 0x00)
+		if (readChar != key)
 		{
 			continue;
 		}
@@ -144,20 +216,20 @@ int learn(const char *path, const char *correctRet, const int x, const int y)
 		i += 1;
 	}
 
-	pteDeltaX = -((pteXY[0] % 300 + 1) / 3);
-	pteDeltaY = 100 - (100 - (pteXY[0] / 300));
+	pteDeltaX = -((pteXY[0] % (3 * x) + 1) / 3);
+	pteDeltaY = y - (y - (pteXY[0] / (3 * x)));
 
 	for (i = 0; pteXY[i] != 0; i++)
 	{
-		pteX = pteXY[i] % 300;
-		pteY = pteXY[i] / 300;
-		if (pteY == pteXY[i + 1] / 300 && pteY == pteXY[i + 2] / 300)
+		pteX = pteXY[i] % (3 * x);
+		pteY = pteXY[i] / (3 * x);
+		if (pteY == pteXY[i + 1] / (3 * x) && pteY == pteXY[i + 2] / (3 * x))
 		{
 			i += 2;
 		}
 		pteX += 1;
 		pteX = pteX / 3 + 1;
-		pteY = 100 - pteY;
+		pteY = y - pteY;
 		
 		if (0 >= fprintf(outH, "%d %d\n", pteX + pteDeltaX, pteY + pteDeltaY))
 		{
@@ -167,6 +239,8 @@ int learn(const char *path, const char *correctRet, const int x, const int y)
 
 	fclose(outH);
 	fclose(inH);
+
+	free(pteXY);
 
 	return 0;
 }
@@ -187,6 +261,9 @@ char *identify(const char *path, int key, int x, int y)
 	char *retP;
 	PTE *pteInInfo;
 
+	PteInfo pteinfo;
+	pteinfo = getbmpinfo(path);
+
 	pteXY = (int *)calloc(sizeof(int), x * y * 3);
 	if (pteXY == NULL)
 	{
@@ -203,7 +280,7 @@ char *identify(const char *path, int key, int x, int y)
 	{
 		return NULL;
 	}
-	fseek(inH, 54, SEEK_SET);		/* skip file header */
+	fseek(inH, pteinfo.headerSize, SEEK_SET);		/* skip file header */
 
 	if (-1 == chdir("data"))
 	{
@@ -247,6 +324,8 @@ char *identify(const char *path, int key, int x, int y)
 	}
 	
 	fclose(inH);
+
+	free(pteXY);
 
 	return compare(pteInInfo, pteInInfoCount);
 }
@@ -320,6 +399,8 @@ char *compare(PTE *pteInInfo, int pteInInfoSize)
 	{
 		highestName = tempHighestName;
 	}
+	
+	free(pteInInfo);
 
 	return highestName;
 }
