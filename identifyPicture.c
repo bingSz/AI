@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <signal.h>
+#include <math.h>
 
 typedef struct
 {
@@ -113,7 +114,7 @@ int learn(const char *path, const char *correctRet, const int x, const int y)
 	{
 		return -1;
 	}
-	fseek(inH, 55, SEEK_SET);		/* skip file header */
+	fseek(inH, 54, SEEK_SET);		/* skip file header */
 
 	if (-1 == chdir("data"))
 	{
@@ -202,7 +203,7 @@ char *identify(const char *path, int key, int x, int y)
 	{
 		return NULL;
 	}
-	fseek(inH, 55, SEEK_SET);		/* skip file header */
+	fseek(inH, 54, SEEK_SET);		/* skip file header */
 
 	if (-1 == chdir("data"))
 	{
@@ -252,7 +253,7 @@ char *identify(const char *path, int key, int x, int y)
 
 char *compare(PTE *pteInInfo, int pteInInfoSize)
 {
-	float highest = 0.000, tempHighest = 0.000;
+	float highest = -1000.000, tempHighest = -1000.000;
 	char *highestName = NULL;
 	static char tempHighestName[257] = "";
 
@@ -302,7 +303,7 @@ float compareData(PTE *pteInInfo, int pteInInfoSize)
 	PTE pteDataInfo[30000];
 	int pteDataInfoCount;
 	int pteX, pteY;
-	float probability = 0.000, tempProbability = 0.000;
+	float probability = -1000.000, tempProbability = -1000.000;
 
 	FILE *dataH = NULL;
 	char lineString[1024] = "";
@@ -388,7 +389,7 @@ float computeProbability(PTE *pteDataInfo, PTE *pteInInfo, int size, int allProb
 			DhighestY = pteDataInfo[i].y;
 		}
 		
-		if (abs(pteDataInfo[i].x - pteInInfo[i].x) <= 1 &&
+/*		if (abs(pteDataInfo[i].x - pteInInfo[i].x) <= 1 &&
 			abs(pteDataInfo[i].y - pteInInfo[i].y) <= 1)
 		{
 			total += 3;
@@ -403,8 +404,9 @@ float computeProbability(PTE *pteDataInfo, PTE *pteInInfo, int size, int allProb
 		{
 			total += 1;
 		}
+*/	
+		total += -((pteDataInfo[i].x - pteInInfo[i].x) * (pteDataInfo[i].x - pteInInfo[i].x) + (pteDataInfo[i].y - pteInInfo[i].y) * (pteDataInfo[i].y - pteInInfo[i].y));
 	}
 
-	return total / allProbability - abs(IhighestX - DhighestX) / allProbability \
-	- abs(IhighestY - DhighestY) / allProbability;
+	return total / allProbability - abs(IhighestX - DhighestX) - abs(IhighestY - DhighestY) - fabs(size - allProbability);
 }
