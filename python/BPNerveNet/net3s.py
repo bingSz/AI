@@ -44,5 +44,5 @@ def BP(dataSet, labelSet, maxIter = 1000, learningRate = 0.1):
 def predict(data, w0, w1, a, b):
     dataM = mat(data)
     H = sgn(w0 * dataM.T + a)
-    return w1 * H + b
+    return sgn(w1 * H + b)
 
