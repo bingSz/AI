@@ -11,7 +11,7 @@ if __name__ == '__main__':
     for i in xrange(len(snd)):
         soundVect.extend([snd[i]])
 
-    soundTransformed = log10(abs(fft.rfft(soundVect)))
+    soundTransformed = log10(clip(abs(fft.rfft(soundVect)), 1e-16, 1e100))
 
     soundIndex = linspace(0, sampFreq / 2, len(soundTransformed))
 
