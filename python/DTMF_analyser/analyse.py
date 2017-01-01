@@ -1,11 +1,15 @@
 #!/bin/env python
 
+import sys
 from scipy.io import wavfile
 from numpy import *
 
 if __name__ == '__main__':
 
-    sampFreq, snd = wavfile.read('a.wav')
+    if len(sys.argv[1]) == 0:
+        sampFreq, snd = wavfile.read('1.wav')
+    else:
+        sampFreq, snd = wavfile.read(sys.argv[1])
 
     soundVect = []
     for i in xrange(len(snd)):
@@ -17,4 +21,4 @@ if __name__ == '__main__':
 
     IndexSorted = list(argsort(soundTransformed))
     IndexSorted.reverse()
-    print soundIndex[IndexSorted[:10]]
+    print soundIndex[IndexSorted[:100]]
