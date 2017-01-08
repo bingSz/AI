@@ -5,14 +5,15 @@ from numpy import *
 def sgn(x):
     return 1 / (1 + exp(-x))
 
-def BP(dataSet, labelSet, maxIter = 1000, learningRate = 0.1):
+def BP(dataSet, labelSet, maxIter = 1000, learningRate = 0.1, hideNum = -1):
     dataMat = mat(dataSet)
     labelMat = mat(labelSet)
 
     m, n = shape(dataMat)
     OutNum = shape(labelMat[0])[1]
     
-    hideNum = 2 * n + 1
+    if hideNum == -1:
+    	hideNum = 2 * n + 1
 
     w0 = mat(random.uniform(-1, 1, size = (hideNum, n)))
     a = mat(random.uniform(-1, 1, size = (hideNum, 1)))
